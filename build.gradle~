@@ -1,0 +1,25 @@
+apply plugin: 'java'
+repositories {  
+    mavenCentral()  
+}  
+dependencies {  
+// http://mvnrepository.com/artifact/de.erichseifert.gral/gral-core
+   compile group: 'de.erichseifert.gral', name: 'gral-core', version: '0.11'
+}  
+task downloadJars(type: Copy) {
+  from configurations.runtime
+  into 'libs' // 目标位置
+}
+task downloadGoogleJars(type: Copy) {
+  from configurations.runtime
+  into 'googleLibs' // 目标位置
+}
+task downloadbreezevizJars(type: Copy) {
+  from configurations.runtime
+  into 'breezevizlibs' // 目标位置
+}
+task downloadgralJars(type: Copy) {
+  from configurations.runtime
+  into 'grallibs' // 目标位置
+}
+apply plugin: 'eclipse'
