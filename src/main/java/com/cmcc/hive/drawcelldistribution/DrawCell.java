@@ -8,7 +8,11 @@ import java.sql.Statement;
 
 import de.erichseifert.gral.data.DataTable;
 import com.cmcc.hive.drawcelldistribution.gralPaintPosition;
+import com.cmcc.hive.drawcelldistribution.CustomerTrace;
+import com.cmcc.hive.drawcelldistribution.points;
+import com.cmcc.hive.drawcelldistribution.ConstantParameters;
 import java.util.*;
+import java.math.BigDecimal;
 
 public class DrawCell{
 	
@@ -24,80 +28,132 @@ public class DrawCell{
 	private static ResultSet rs = null;
 	private static Map<Double,Double> customerPosition = null;
 	private static Set<Map.Entry<Double, Double>> positonSet = null;
+	private static Connection conn = null;
+	private static Statement stmt = null;
+	private static String databaseName = null;
+	private static String tableName = null;
+	private static String viewName = null;
+	private static DataTable dataCellPosition = null;
+	private static HashMap<Location,points> pointsKeyByLocation = null;
+	private static HashMap<String,points> pointsByMsisdn = null;
 	
-/*	private class InnerPaint extends JFrame{
-		public static final long serialVersionUID = 2l;
-		private cellPanel cp  = null;
-		public InnerPaint(){
-			cp = new cellPanel();
-			this.add(cp);
-			this.setSize(800,800);
-			this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			this.setVisible(true);
+	
+	public void DrawDataTable(DataTable dt){
+		gralPaintPosition gp = new gralPaintPosition(dt);
+		gp.showInFrame();
+	}
+	
+	public void ConnectHiveBase() throws ClassNotFoundException,SQLException{
+		Class.forName(driverName);
+		conn = DriverManager.getConnection(hiveUrl, hiveUser, hivePass);
+		stmt = conn.createStatement();
+		databaseName = "cdr";
+		tableName = "cs_cdr";
+		viewName = "";
+		sqlCmd = "SHOW DATABASES";
+		rs = stmt.executeQuery(sqlCmd);
+		while(rs.next()){
+			System.out.println(rs.getString(1));
 		}
+		sqlCmd = "USE " + databaseName;
+		stmt.execute(sqlCmd);
+	}
+	
+	public void RetrieveResultSet() throws ClassNotFoundException,SQLException{
+		sqlCmd = "SHOW TABLES";
+		rs = stmt.executeQuery(sqlCmd);
+		while(rs.next()){
+			System.out.println(rs.getString(1));
+		}
+		viewName = "costumerpositon";
+		sqlCmd = "SELECT * FROM " + viewName ;
+		rs = stmt.executeQuery(sqlCmd);
+		customerPosition = new HashMap<Double,Double>();
+		Double tmplongitude;
+		Double tmplatitude;
+		while(rs.next()){
+			tmplongitude = new Double(rs.getDouble(4));
+			tmplatitude = new Double(rs.getDouble(5));
+			customerPosition.put(tmplongitude,tmplatitude);
+		}
+		positonSet = customerPosition.entrySet();
+		dataCellPosition = new DataTable(Double.class,Double.class);
+		for(Map.Entry<Double, Double> positionEntry : positonSet){
+			dataCellPosition.add(positionEntry.getKey(),positionEntry.getValue());
+		}
+	}
+	
+	public void RetrieveResultSet(int inteast, int intwest, int intsouth, int intnorth) throws ClassNotFoundException,SQLException{
 		
+		BigDecimal gridleft = new BigDecimal(inteast);
+		BigDecimal gridright = new BigDecimal(intwest);
+		BigDecimal griddown = new BigDecimal(intsouth);
+		BigDecimal gridup = new BigDecimal(intnorth);
+		
+		BigDecimal east = ConstantParameters.minlongitude.add(ConstantParameters.longitudestep.multiply(gridleft));
+		BigDecimal west = ConstantParameters.minlongitude.add(ConstantParameters.longitudestep.multiply(gridright));
+		BigDecimal south = ConstantParameters.minlatitude.add(ConstantParameters.latitudestep.multiply(griddown));
+		BigDecimal north = ConstantParameters.minlatitude.add(ConstantParameters.latitudestep.multiply(gridup));
+		viewName = "costumerpositon"; 
+		sqlCmd = "SELECT * FROM " + viewName + " WHERE " + east.toString() + " < longitude < " + west.toString() + " AND " + south.toString() + " < latitude < " + north + " DISTRIBUTE BY msisdn " + "SORT BY formateddate ASC LIMIT 100";
+		rs = stmt.executeQuery(sqlCmd);
+		pointsKeyByLocation = new HashMap<Location,points>();
+		pointsByMsisdn = new HashMap<String,points>();
+		String tmpmsisdn;
+		String tmpformateddate;
+		String tmpcgi;
+		Double tmplongitude;
+		Double tmplatitude;
+		Location tmploc;
+		points tmppoi;
+		Fac factory1 = new ConcreteLocationFac();
+		while(rs.next()){
+			tmpmsisdn = rs.getString(1);
+			tmpformateddate = rs.getString(2);
+			tmpcgi = rs.getString(3);
+			tmplongitude = new Double(rs.getDouble(4));
+			tmplatitude = new Double(rs.getDouble(5));
+			tmploc = factory1.createLoc(tmplongitude, tmplatitude);
+			tmppoi = factory1.createPoi(tmpmsisdn, tmpformateddate, tmploc);
+			pointsKeyByLocation.put(tmploc,tmppoi);
+			pointsByMsisdn.put(tmpmsisdn, tmppoi);
+		}
 	}
 	
-	private class cellPanel extends JPanel{
-		public static final long serialVersionUID = 1l;
-		public void paint(Graphics g){
-			super.paint(g);
-			for(Map.Entry<Double, Double> positionEntry : positonSet){
-				g.drawOval(Double2Int(positionEntry.getKey()),Double2Int(positionEntry.getValue()), 10, 10);
-				g.setColor(Color.BLUE);
-				g.fillOval(Double2Int(positionEntry.getKey()),Double2Int(positionEntry.getValue()),10,10);
-			}
-		}
-		public int Double2Int(Double doubleNum){
-			String tmpString = doubleNum.toString();
-			String intString = tmpString.substring(0, tmpString.indexOf(".")) + tmpString.substring(tmpString.indexOf(".")+1);
-			return Integer.parseInt(intString);
+	public void getCustomerTrace() throws SQLException{
+		sqlCmd  = "SELECT * FROM testCustomer tc JOIN costumerpositon cp ON tc.msisdn = cp.msisdn";
+		rs = stmt.executeQuery(sqlCmd);
+		String tmpmsisdn;
+		String tmpformateddate;
+		String tmpcgi;
+		Double tmplongitude;
+		Double tmplatitude;
+		Location tmploc;
+		points tmppoi;
+//		CustomerTrace tmpct
+		Fac factory1 = new ConcreteLocationFac();
+		while(rs.next()){
+			tmpmsisdn = rs.getString(1);
+			tmpformateddate = rs.getString(2);
+			tmpcgi = rs.getString(3);
+			tmplongitude = new Double(rs.getDouble(4));
+			tmplatitude = new Double(rs.getDouble(5));
+			tmploc = factory1.createLoc(tmplongitude, tmplatitude);
+			
+			
+			
 		}
 	}
 	
-	public InnerPaint getInnerPaint(){
-		return new InnerPaint();
-	}*/
-	
-	
-	public static void main(String[] args){
+	public static void main(String[] args){	
 		
 	try{
-			Class.forName(driverName);
-				Connection conn = DriverManager.getConnection(hiveUrl, hiveUser, hivePass);
-				Statement stmt = conn.createStatement();
-				String databaseName = "cdr";
-				String tableName = "cs_cdr";
-				String viewName = "";
-				sqlCmd = "SHOW DATABASES";
-				rs = stmt.executeQuery(sqlCmd);
-				while(rs.next()){
-					System.out.println(rs.getString(1));
-				}
-				sqlCmd = "USE " + databaseName;
-				stmt.execute(sqlCmd);
-				sqlCmd = "SHOW TABLES";
-				rs = stmt.executeQuery(sqlCmd);
-				while(rs.next()){
-					System.out.println(rs.getString(1));
-				}
-				viewName = "costumerpositon";
-				sqlCmd = "SELECT * FROM " + viewName;
-				rs = stmt.executeQuery(sqlCmd);
-				customerPosition = new HashMap<Double,Double>();
-				while(rs.next()){
-//					System.out.println(rs.getString(1) + "\t" + rs.getString(2) + "\t" + rs.getString(3) + "\t" + rs.getString(4) + "\t" + rs.getString(5));
-					customerPosition.put(new Double(rs.getDouble(4)),new Double(rs.getDouble(5)));
-				}
-				positonSet = customerPosition.entrySet();
-				DataTable data = new DataTable(Double.class,Double.class);
-				for(Map.Entry<Double, Double> positionEntry : positonSet){
-					data.add(positionEntry.getKey(),positionEntry.getValue());
-//					System.out.println(positionEntry.toString());
-				}
-				gralPaintPosition gp = new gralPaintPosition(data);
-				gp.showInFrame();
-													
+				DrawCell dc = new DrawCell();
+				dc.ConnectHiveBase();
+				dc.RetrieveResultSet();
+				dc.DrawDataTable(dataCellPosition);				
+//				dc.RetrieveResultSet(49, 50, 49, 50);
+										
 		}catch(ClassNotFoundException e){
 			e.printStackTrace();  
             System.exit(1);  

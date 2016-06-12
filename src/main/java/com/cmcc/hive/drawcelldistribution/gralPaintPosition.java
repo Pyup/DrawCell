@@ -93,6 +93,7 @@ public class gralPaintPosition extends baseGralPaint {
 
 		// Add plot to Swing component
 		add(new InteractivePanel(plot), BorderLayout.CENTER);
+		add(new InteractivePanel(plot), BorderLayout.CENTER);
 	}
 
 	@Override
