@@ -22,6 +22,11 @@ class Location{
 	private Double longitude;
 	private Double latitude;
 	
+	@Override
+	public String toString(){
+		return longitude.toString() + " " + latitude.toString();
+	}
+	
 	public Location(){
 		
 	}

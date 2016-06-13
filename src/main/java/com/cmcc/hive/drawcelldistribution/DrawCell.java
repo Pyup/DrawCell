@@ -77,7 +77,7 @@ public class DrawCell{
 			customerPosition.put(tmplongitude,tmplatitude);
 		}
 		positonSet = customerPosition.entrySet();
-		dataCellPosition = new DataTable(Double.class,Double.class);
+		dataCellPosition = new DataTable(2,Double.class);
 		for(Map.Entry<Double, Double> positionEntry : positonSet){
 			dataCellPosition.add(positionEntry.getKey(),positionEntry.getValue());
 		}
@@ -121,27 +121,39 @@ public class DrawCell{
 	}
 	
 	public void getCustomerTrace() throws SQLException{
-		sqlCmd  = "SELECT * FROM testCustomer tc JOIN costumerpositon cp ON tc.msisdn = cp.msisdn";
+		sqlCmd  = "SELECT * FROM testCustomer tc JOIN costumerpositon cp ON cp.msisdn = tc.msisdn ORDER BY cp.msisdn,formateddate";
 		rs = stmt.executeQuery(sqlCmd);
 		String tmpmsisdn;
+		String compareMsisdn = "used for comparison";
 		String tmpformateddate;
-		String tmpcgi;
 		Double tmplongitude;
 		Double tmplatitude;
 		Location tmploc;
-		points tmppoi;
-//		CustomerTrace tmpct
+		TraceFac facTrace = new CustomerTraceFac();
 		Fac factory1 = new ConcreteLocationFac();
+		CustomerTrace tmpTrace = facTrace.createTrace();
 		while(rs.next()){
-			tmpmsisdn = rs.getString(1);
-			tmpformateddate = rs.getString(2);
-			tmpcgi = rs.getString(3);
-			tmplongitude = new Double(rs.getDouble(4));
-			tmplatitude = new Double(rs.getDouble(5));
-			tmploc = factory1.createLoc(tmplongitude, tmplatitude);
-			
-			
-			
+			tmpmsisdn = rs.getString(3);
+			if(!compareMsisdn.equals(tmpmsisdn)){
+				tmpformateddate = rs.getString(4);
+				tmplongitude = new Double(rs.getDouble(6));
+				tmplatitude = new Double(rs.getDouble(7));
+				tmploc = factory1.createLoc(tmplongitude, tmplatitude);
+				tmpTrace = facTrace.createTrace();
+				tmpTrace.setMsisdn(tmpmsisdn);
+				tmpTrace.putPointInTraceMap(tmpformateddate, tmploc);
+				compareMsisdn=tmpmsisdn;
+				Trace.addTrace(tmpmsisdn, tmpTrace);
+			}
+			else{
+				tmpformateddate = rs.getString(4);
+				tmplongitude = new Double(rs.getDouble(6)); 
+				tmplatitude = new Double(rs.getDouble(7));
+				tmploc = factory1.createLoc(tmplongitude, tmplatitude);
+				tmpTrace.setMsisdn(tmpmsisdn);
+				tmpTrace.putPointInTraceMap(tmpformateddate, tmploc);
+				compareMsisdn=tmpmsisdn; 
+			}
 		}
 	}
 	
@@ -150,9 +162,20 @@ public class DrawCell{
 	try{
 				DrawCell dc = new DrawCell();
 				dc.ConnectHiveBase();
-				dc.RetrieveResultSet();
-				dc.DrawDataTable(dataCellPosition);				
+//				dc.RetrieveResultSet();
+//				dc.DrawDataTable(dataCellPosition);				
 //				dc.RetrieveResultSet(49, 50, 49, 50);
+				 dc.getCustomerTrace();
+				 CustomerTrace ct = null;
+				 HashMap<String,Location> tmpMap = null;
+				 Set<String> msisdnSet = Trace.getCustomerTraceMap().keySet();
+				 for (String msisdn : msisdnSet){
+					 ct = Trace.getCustomerTraceMap().get(msisdn);
+					 tmpMap = ct.getTimeTrace();
+					 for(String time : tmpMap.keySet()){
+						 System.out.println(msisdn + " " + time + " " + tmpMap.get(time));
+					 }
+				 }
 										
 		}catch(ClassNotFoundException e){
 			e.printStackTrace();  
