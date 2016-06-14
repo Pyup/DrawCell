@@ -36,6 +36,14 @@ class Location{
 		this.latitude = latitude;
 	}
 	
+	public Double getLongitude(){
+		return longitude;
+	}
+	
+	public Double getLatitude(){
+		return latitude;
+	}
+	
 	
 }
 

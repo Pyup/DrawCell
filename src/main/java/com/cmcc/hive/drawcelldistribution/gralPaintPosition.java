@@ -30,9 +30,6 @@ public class gralPaintPosition extends baseGralPaint {
 	/** Version id for serialization. */
 	private static final long serialVersionUID = -5263057758564264676L;
 
-	/** Instance to generate random data values. */
-	private static final Random random = new Random();
-
 	@SuppressWarnings("unchecked")
 	
 	public gralPaintPosition(){
@@ -76,13 +73,13 @@ public class gralPaintPosition extends baseGralPaint {
 		// Custom stroke for the x-axis
 		BasicStroke stroke = new BasicStroke(2f);
 		axisRendererX.setShapeStroke(stroke);
+		//Custom Y linear label
 		Label linearAxisLabel = new Label("Linear axis");
 		linearAxisLabel.setRotation(90);
 		axisRendererY.setLabel(linearAxisLabel);
-		// Change intersection point of Y axis
+		// Change intersection point of X AND Y axis
 		axisRendererY.setIntersection(0.1);
 		axisRendererY.setTickSpacing(0.1);
-		// Change tick spacing
 		axisRendererX.setIntersection(1.0);
 		axisRendererX.setTickSpacing(1.0);
 
