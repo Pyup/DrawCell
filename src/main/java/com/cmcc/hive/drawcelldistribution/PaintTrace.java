@@ -19,6 +19,7 @@ import de.erichseifert.gral.plots.axes.AxisRenderer;
 import de.erichseifert.gral.plots.axes.LogarithmicRenderer2D;
 import de.erichseifert.gral.plots.lines.DiscreteLineRenderer2D;
 import de.erichseifert.gral.plots.lines.DefaultLineRenderer2D;
+import de.erichseifert.gral.plots.lines.SmoothLineRenderer2D;
 import de.erichseifert.gral.plots.points.DefaultPointRenderer2D;
 import de.erichseifert.gral.plots.points.PointRenderer;
 import de.erichseifert.gral.plots.points.SizeablePointRenderer;
@@ -34,15 +35,22 @@ public class PaintTrace extends baseGralPaint {
 	/** Version id for serialization. */
 	private static final long serialVersionUID = -5263057758564264676L;
 	private static List<DataTable> dataList = new ArrayList<DataTable>();
+	private static int customerNum = 0;
 
 	public PaintTrace() {
 		// Create data series
 		this.setDataTable();
-		DataSeries cus1 = new DataSeries(dataList.get(9), 0, 1);
-		DataSeries cus2 = new DataSeries(dataList.get(18), 0, 1);
-
-		// Create new xy-plot
-		XYPlot plot = new XYPlot(cus1, cus2);
+		Iterator<DataTable> dataIterator = dataList.iterator();
+		DataSeries cus = null;
+		DataSeries[] dataSeriesArray = new DataSeries[customerNum];
+		int i = 0;
+		while(dataIterator.hasNext()){
+			cus = new DataSeries(dataIterator.next(), 0, 1);
+			dataSeriesArray[i] = cus;
+			i++;
+		}
+		// Create new xy-plotS
+		XYPlot plot = new XYPlot(dataSeriesArray);
 
 		// Format plot
 		plot.setInsets(new Insets2D.Double(60.0, 60.0, 60.0, 60.0));
@@ -90,13 +98,14 @@ public class PaintTrace extends baseGralPaint {
 		// Format rendering of data points
 		PointRenderer sizeablePointRenderer = new SizeablePointRenderer();
 		sizeablePointRenderer.setColor(GraphicsUtils.deriveDarker(COLOR1));
-		plot.setPointRenderers(cus1, sizeablePointRenderer);
-		plot.setPointRenderers(cus2, sizeablePointRenderer);
-
+		for(i = 0; i < customerNum; i++){
+			plot.setPointRenderers(dataSeriesArray[i], sizeablePointRenderer);
+		}
 		// Format data lines
-		DefaultLineRenderer2D defaultLineRenderer = new DefaultLineRenderer2D();
-		plot.setLineRenderers(cus1, defaultLineRenderer);
-		plot.setLineRenderers(cus2, defaultLineRenderer);
+		SmoothLineRenderer2D smoothLineRenderer2D = new SmoothLineRenderer2D();
+		for(i = 0; i < customerNum; i++){
+			plot.setLineRenderers(dataSeriesArray[i], smoothLineRenderer2D);
+		}
 		/*		DiscreteLineRenderer2D discreteRenderer = new DiscreteLineRenderer2D();discreteRenderer.setColor(COLOR1);
 		discreteRenderer.setStroke(new BasicStroke(
 				3.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND,
@@ -124,27 +133,19 @@ public class PaintTrace extends baseGralPaint {
 		return "Shenzhen CMCC customer Trace Demo";
 	}
 	
-	public void setDataTable(){
+	public void setDataTable(){   
 		 CustomerTrace tmpCT = null;
 		 DataTable tmpDt = null;
 		 HashMap<String,Location> tmpHm = null;
-		 int cusNums = 20;
-		 int i = 0;
 		 for(Map.Entry<String, CustomerTrace> tmpEn : Trace.getCustomerTraceMap().entrySet()){
-			 if(i < cusNums){
-				 i++;
 				 tmpCT = tmpEn.getValue();
 				 tmpDt = new DataTable(2,Double.class);
 				 tmpHm = tmpCT.getTimeTrace();
 				 for(Map.Entry<String, Location> timeLoc : tmpHm.entrySet()){
 					 tmpDt.add(new Double(timeLoc.getValue().getLongitude().doubleValue()*111000),new Double(timeLoc.getValue().getLatitude().doubleValue()*111000));
-				 }
 				 dataList.add(tmpDt);
-			 }
-			 else{
-				 break;
-			 }
+				 customerNum++;
 		 }
 	}
-	
+	}
 }
