@@ -121,20 +121,10 @@ public class DrawCell{
 	}
 	
 	public void getCustomerTrace(int inteast, int intwest, int intsouth, int intnorth) throws SQLException{
-		BigDecimal gridleft = new BigDecimal(inteast);
-		BigDecimal gridright = new BigDecimal(intwest);
-		BigDecimal griddown = new BigDecimal(intsouth);
-		BigDecimal gridup = new BigDecimal(intnorth);
 		
-/*		BigDecimal east = ConstantParameters.minlongitude.add(ConstantParameters.longitudestep.multiply(gridleft));
-		BigDecimal west = ConstantParameters.minlongitude.add(ConstantParameters.longitudestep.multiply(gridright));
-		BigDecimal south = ConstantParameters.minlatitude.add(ConstantParameters.latitudestep.multiply(griddown));
-		BigDecimal north = ConstantParameters.minlatitude.add(ConstantParameters.latitudestep.multiply(gridup));
-*/		
-//		sqlCmd = "INSERT OVERWRITE TABLE testCustomer SELECT p.msisdn as customer,COUNT(*) as occurrence FROM costumerpositon p WHERE p.msisdn LIKE '86%' AND " + east.toString() + "<p.longitude<" + west.toString() + " AND " + south.toString() + "<p.latitude<" + north.toString() + " GROUP BY p.msisdn ORDER BY occurrence DESC,p.msisdn DESC LIMIT 100";
-		sqlCmd = "INSERT OVERWRITE TABLE testCustomer SELECT p.msisdn as customer,COUNT(*) as occurrence FROM customerposition p WHERE p.msisdn LIKE '86%'"  + " GROUP BY p.msisdn ORDER BY occurrence DESC,p.msisdn DESC LIMIT 3000";
+		sqlCmd = "INSERT OVERWRITE TABLE testCustomer SELECT p.msisdn as customer,COUNT(*) as occurrence FROM customerposition p WHERE p.msisdn LIKE '86%'"  + " GROUP BY p.msisdn ORDER BY occurrence DESC,p.msisdn DESC LIMIT 1000";
 		stmt.execute(sqlCmd);
-		sqlCmd = "INSERT OVERWRITE TABLE testTrace SELECT * FROM testCustomer tc JOIN customerposition cp ON cp.msisdn = tc.msisdn ORDER BY cp.msisdn,formateddate ASC";
+		sqlCmd = "INSERT OVERWRITE TABLE testTrace SELECT * FROM testCustomer tc JOIN customerposition cp ON cp.msisdn = tc.msisdn ORDER BY cp.msisdn,formateddate ASC"; 
 		stmt.execute(sqlCmd);
 		sqlCmd = "SELECT * FROM testTrace";
 		rs = stmt.executeQuery(sqlCmd);
